@@ -1,0 +1,155 @@
+#[derive(Debug, Clone, Copy)]
+pub enum Op {
+    Scalar,
+    Add,
+    Mul,
+    Pow(f64), // To keep track of the exponent for backward pass
+    ReLU,
+}
+
+#[derive(Debug)]
+pub struct Value {
+    pub id: usize,
+    pub data: f64,
+    pub grad: f64,
+    pub children: Vec<usize>,
+    pub op: Op,
+}
+
+pub struct Area {
+    nodes: Vec<Value>,
+}
+
+impl Area {
+    pub fn new() -> Self {
+        Area { nodes: Vec::new() }
+    }
+    pub fn get_value(&self, id: usize) -> &Value {
+        &self.nodes[id]
+    }
+    pub fn scalar(&mut self, val: f64) -> usize {
+        let new_id = self.nodes.len();
+        let value = Value {
+            id: new_id,
+            data: val,
+            grad: 0.0,
+            children: Vec::new(),
+            op: Op::Scalar,
+        };
+        self.nodes.push(value);
+        new_id
+    }
+}
+
+// Math Operations
+impl Area {
+    pub fn add(&mut self, a: usize, b: usize) -> usize {
+        let new_id = self.nodes.len();
+        let value = Value {
+            id: new_id,
+            data: self.nodes[a].data + self.nodes[b].data,
+            grad: 0.0,
+            children: vec![a, b],
+            op: Op::Add,
+        };
+        self.nodes.push(value);
+        new_id
+    }
+
+    pub fn mul(&mut self, a: usize, b: usize) -> usize {
+        let new_id = self.nodes.len();
+        let value = Value {
+            id: new_id,
+            data: self.nodes[a].data * self.nodes[b].data,
+            grad: 0.0,
+            children: vec![a, b],
+            op: Op::Mul,
+        };
+        self.nodes.push(value);
+        new_id
+    }
+
+    pub fn pow(&mut self, a: usize, n: f64) -> usize {
+        let new_id = self.nodes.len();
+        let val = self.nodes[a].data.powf(n);
+
+        let node = Value {
+            id: new_id,
+            data: val,
+            grad: 0.0,
+            children: vec![a],
+            op: Op::Pow(n),
+        };
+
+        self.nodes.push(node);
+        new_id
+    }
+
+    pub fn sub(&mut self, a: usize, b: usize) -> usize {
+        let neg_one = self.scalar(-1.0);
+        let neg_b = self.mul(b, neg_one);
+        self.add(a, neg_b)
+    }
+
+    pub fn div(&mut self, a: usize, b: usize) -> usize {
+        let b_inv = self.pow(b, -1.0);
+        self.mul(a, b_inv)
+    }
+
+    pub fn relu(&mut self, a: usize) -> usize {
+        let new_id = self.nodes.len();
+        let value = Value {
+            id: new_id,
+            data: self.nodes[a].data.max(0.0),
+            grad: 0.0,
+            children: vec![a],
+            op: Op::ReLU,
+        };
+        self.nodes.push(value);
+        new_id
+    }
+}
+
+// Backward Pass
+impl Area {
+    pub fn backward(&mut self, root_id: usize) {
+        // Reset grad to 0
+        for node in &mut self.nodes {
+            node.grad = 0.0;
+        }
+
+        if let Some(root) = self.nodes.get_mut(root_id) {
+            root.grad = 1.0;
+        }
+
+        for i in (0..=root_id).rev() {
+            let node_grad = self.nodes[i].grad;
+            let children = self.nodes[i].children.clone();
+            let op = self.nodes[i].op;
+
+            match op {
+                Op::Add => {
+                    for child in children {
+                        self.nodes[child].grad += node_grad;
+                    }
+                }
+                Op::Mul => {
+                    let a = self.nodes[children[0]].data;
+                    let b = self.nodes[children[1]].data;
+                    self.nodes[children[0]].grad += node_grad * b;
+                    self.nodes[children[1]].grad += node_grad * a;
+                }
+                Op::Pow(n) => {
+                    let a = self.nodes[children[0]].data;
+                    self.nodes[children[0]].grad += node_grad * n * a.powf(n - 1.0);
+                }
+                Op::ReLU => {
+                    let child_data = self.nodes[children[0]].data;
+                    let local_derivative = if child_data > 0.0 { 1.0 } else { 0.0 };
+                    self.nodes[children[0]].grad += node_grad * local_derivative;
+                }
+                Op::Scalar => {}
+            }
+        }
+    }
+}
