@@ -27,6 +27,11 @@ impl Arena {
     pub fn get_value(&self, id: usize) -> &Value {
         &self.nodes[id]
     }
+
+    pub fn get_value_mut(&mut self, id: usize) -> &mut Value {
+        &mut self.nodes[id]
+    }
+
     pub fn scalar(&mut self, val: f64) -> usize {
         let new_id = self.nodes.len();
         let value = Value {
@@ -112,12 +117,13 @@ impl Arena {
 
 // Backward Pass
 impl Arena {
-    pub fn backward(&mut self, root_id: usize) {
+    pub fn zero_grad(&mut self) {
         // Reset grad to 0
         for node in &mut self.nodes {
             node.grad = 0.0;
         }
-
+    }
+    pub fn backward(&mut self, root_id: usize) {
         if let Some(root) = self.nodes.get_mut(root_id) {
             root.grad = 1.0;
         }
@@ -151,5 +157,16 @@ impl Arena {
                 Op::Scalar => {}
             }
         }
+    }
+}
+
+// Reset arena to prevevnt memory explosion
+impl Arena {
+    pub fn reset_to_size(&mut self, size: usize) {
+        self.nodes.truncate(size);
+    }
+
+    pub fn len(&self) -> usize {
+        self.nodes.len()
     }
 }

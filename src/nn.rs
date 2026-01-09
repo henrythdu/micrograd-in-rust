@@ -30,6 +30,12 @@ impl Neuron {
         // 3. Apply ReLU
         arena.relu(sum)
     }
+    pub fn parameters(&self) -> Vec<usize> {
+        let mut parameters = Vec::with_capacity(self.weights.len() + 1);
+        parameters.extend(self.weights.iter().cloned());
+        parameters.push(self.bias);
+        parameters
+    }
 }
 
 #[derive(Debug)]
@@ -46,11 +52,13 @@ impl Layer {
         Layer { neurons }
     }
     pub fn forward(&self, arena: &mut Arena, x: Vec<usize>) -> Vec<usize> {
-        let mut outputs = Vec::with_capacity(self.neurons.len());
-        for neuron in &self.neurons {
-            outputs.push(neuron.forward(arena, x.clone()));
-        }
-        outputs
+        self.neurons
+            .iter()
+            .map(|n| n.forward(arena, x.clone()))
+            .collect()
+    }
+    pub fn parameters(&self) -> Vec<usize> {
+        self.neurons.iter().flat_map(|n| n.parameters()).collect()
     }
 }
 
@@ -70,10 +78,12 @@ impl MLP {
         MLP { layers }
     }
     pub fn forward(&self, arena: &mut Arena, x: Vec<usize>) -> Vec<usize> {
-        let mut outputs = x;
-        for layer in &self.layers {
-            outputs = layer.forward(arena, outputs);
-        }
-        outputs
+        self.layers
+            .iter()
+            .fold(x, |current_x, l| l.forward(arena, current_x.clone()))
+    }
+
+    pub fn parameters(&self) -> Vec<usize> {
+        self.layers.iter().flat_map(|l| l.parameters()).collect()
     }
 }
