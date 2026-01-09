@@ -16,13 +16,13 @@ pub struct Value {
     pub op: Op,
 }
 
-pub struct Area {
+pub struct Arena {
     nodes: Vec<Value>,
 }
 
-impl Area {
+impl Arena {
     pub fn new() -> Self {
-        Area { nodes: Vec::new() }
+        Arena { nodes: Vec::new() }
     }
     pub fn get_value(&self, id: usize) -> &Value {
         &self.nodes[id]
@@ -42,7 +42,7 @@ impl Area {
 }
 
 // Math Operations
-impl Area {
+impl Arena {
     pub fn add(&mut self, a: usize, b: usize) -> usize {
         let new_id = self.nodes.len();
         let value = Value {
@@ -111,7 +111,7 @@ impl Area {
 }
 
 // Backward Pass
-impl Area {
+impl Arena {
     pub fn backward(&mut self, root_id: usize) {
         // Reset grad to 0
         for node in &mut self.nodes {
