@@ -36,13 +36,11 @@ pub fn loss(arena: &mut Arena, model: &MLP, X: &Vec<Vec<f64>>, y: &Vec<f64>) -> 
     let data_loss = arena.div(data_loss_sum, len_losses);
     // L2 Regularization Loss
     let alpha = arena.scalar(1e-4);
-    let reg_sum = model
-        .parameters()
-        .iter()
-        .fold(arena.scalar(0.0), |acc, &param| {
-            let p_sq = arena.pow(param, 2.0);
-            arena.add(acc, p_sq)
-        });
+    let parameters = model.parameters();
+    let reg_sum = parameters.iter().fold(arena.scalar(0.0), |acc, &param| {
+        let p_sq = arena.pow(param, 2.0);
+        arena.add(acc, p_sq)
+    });
     let reg_loss = arena.mul(alpha, reg_sum);
     let total_loss = arena.add(data_loss, reg_loss);
     let accuracy = correct_count / y.len() as f64;
