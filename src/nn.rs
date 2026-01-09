@@ -8,10 +8,10 @@ pub struct Neuron {
 
 impl Neuron {
     pub fn new(arena: &mut Arena, nin: usize) -> Self {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut weights = Vec::with_capacity(nin);
         for _ in 0..nin {
-            let val = rng.gen_range(-1.0..=1.0);
+            let val = rng.random_range(-1.0..=1.0);
             weights.push(arena.scalar(val));
         }
         let bias = arena.scalar(0.0);

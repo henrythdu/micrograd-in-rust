@@ -1,8 +1,8 @@
 use crate::engine::Arena;
 use crate::nn::MLP;
 
-pub fn loss(arena: &mut Arena, model: &MLP, X: &Vec<Vec<f64>>, y: &Vec<f64>) -> (usize, f64) {
-    let scores: Vec<usize> = X
+pub fn loss(arena: &mut Arena, model: &MLP, x: &Vec<Vec<f64>>, y: &Vec<f64>) -> (usize, f64) {
+    let scores: Vec<usize> = x
         .iter()
         .map(|xrow| {
             // 1. Convert the current row to Arena IDs

@@ -9,7 +9,6 @@ pub enum Op {
 
 #[derive(Debug)]
 pub struct Value {
-    pub id: usize,
     pub data: f64,
     pub grad: f64,
     pub children: Vec<usize>,
@@ -35,7 +34,6 @@ impl Arena {
     pub fn scalar(&mut self, val: f64) -> usize {
         let new_id = self.nodes.len();
         let value = Value {
-            id: new_id,
             data: val,
             grad: 0.0,
             children: Vec::new(),
@@ -51,7 +49,6 @@ impl Arena {
     pub fn add(&mut self, a: usize, b: usize) -> usize {
         let new_id = self.nodes.len();
         let value = Value {
-            id: new_id,
             data: self.nodes[a].data + self.nodes[b].data,
             grad: 0.0,
             children: vec![a, b],
@@ -64,7 +61,6 @@ impl Arena {
     pub fn mul(&mut self, a: usize, b: usize) -> usize {
         let new_id = self.nodes.len();
         let value = Value {
-            id: new_id,
             data: self.nodes[a].data * self.nodes[b].data,
             grad: 0.0,
             children: vec![a, b],
@@ -79,7 +75,6 @@ impl Arena {
         let val = self.nodes[a].data.powf(n);
 
         let node = Value {
-            id: new_id,
             data: val,
             grad: 0.0,
             children: vec![a],
@@ -90,6 +85,7 @@ impl Arena {
         new_id
     }
 
+    #[allow(dead_code)]
     pub fn sub(&mut self, a: usize, b: usize) -> usize {
         let neg_one = self.scalar(-1.0);
         let neg_b = self.mul(b, neg_one);
@@ -104,7 +100,6 @@ impl Arena {
     pub fn relu(&mut self, a: usize) -> usize {
         let new_id = self.nodes.len();
         let value = Value {
-            id: new_id,
             data: self.nodes[a].data.max(0.0),
             grad: 0.0,
             children: vec![a],
